@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI check faces</title>
+</head>
+<body>
+    <h2>Register</h2>
+    <input id="name" placeholder="Name">
+    <input id="id" placeholder="Student ID">
+    <video id="video" autoplay></video>
+    <button onclick="capture()">Register</button>
+
+<script>
+    function capture(){
+        let canvas =document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        let ctx = canvas.getContext("2d");
+        ctx.drawImage(video,0,0);
+
+        let image = canvas.toDataURL("image/jpeg");
+        fetch("/register",{
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                image: image,
+                name: document.getElementById("name").value,
+                id: document.getElementById("id").value
+            })
+        })
+    }
+</script>
+
+</body>
+</html>
