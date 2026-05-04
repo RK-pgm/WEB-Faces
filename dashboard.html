@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Dashboard</title>
+</head>
+<body>
+    <h2>Attendance</h2>
+    <a href="/">หน้าหลัก</a> | 
+    <a href="/register_page">ลงทะเบียน</a>
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>รหัสนักศึกษา</th>
+                <th>Name</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name, student_id, time in data %}
+            <tr>
+                <td>{{ student_id }}</td>
+                <td>{{ name }}</td>
+                <td>{{ time }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

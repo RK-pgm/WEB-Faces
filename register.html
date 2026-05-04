@@ -1,38 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI check faces</title>
+    <title>ลงทะเบียนนักศึกษาใหม่</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f0f2f5; }
+        .register-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 450px; }
+        h2 { color: #1a73e8; margin-bottom: 20px; }
+        input { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        video { width: 100%; border-radius: 10px; border: 2px solid #34a853; margin-top: 10px; background: #000; }
+        .btn-group { margin-top: 20px; }
+        .btn { padding: 12px 25px; font-size: 16px; cursor: pointer; border: none; border-radius: 8px; transition: 0.3s; font-weight: bold; }
+        .btn-reg { background-color: #34a853; color: white; width: 100%; }
+        .btn-back { background-color: #5f6368; color: white; margin-top: 10px; width: 100%; }
+        .btn:hover { opacity: 0.9; }
+    </style>
 </head>
 <body>
-    <h2>Register</h2>
-    <input id="name" placeholder="Name">
-    <input id="id" placeholder="Student ID">
-    <video id="video" autoplay></video>
-    <button onclick="capture()">Register</button>
+    <div class="register-container">
+        <h2>📝 ลงทะเบียนใหม่</h2>
+        <input id="name" type="text" placeholder="ชื่อ-นามสกุล">
+        <input id="id" type="text" placeholder="รหัสนักศึกษา">
+        <video id="video" width="400" height="300" autoplay></video>
+        
+        <div class="btn-group">
+            <button class="btn btn-reg" onclick="capture()">บันทึกข้อมูลและใบหน้า</button>
+            <button class="btn btn-back" onclick="window.location.href='/'">ยกเลิก / กลับหน้าหลัก</button>
+        </div>
+    </div>
 
 <script>
+    const video = document.getElementById("video");
+
+    // ขออนุญาตใช้กล้อง
+    navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
+        .then(stream => { video.srcObject = stream; })
+        .catch(err => { alert("ไม่สามารถเข้าถึงกล้องได้: " + err); });
+
     function capture(){
-        let canvas =document.createElement("canvas");
+        const name = document.getElementById("name").value.trim();
+        const id = document.getElementById("id").value.trim();
+
+        if(!name || !id) {
+            alert("กรุณากรอกชื่อและรหัสนักศึกษาให้ครบถ้วน");
+            return;
+        }
+
+        let canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
+        
+        if(canvas.width === 0) {
+            alert("กล้องยังไม่พร้อมใช้งาน กรุณารอสักครู่");
+            return;
+        }
 
         let ctx = canvas.getContext("2d");
-        ctx.drawImage(video,0,0);
+        ctx.drawImage(video, 0, 0);
+        let image = canvas.toDataURL("image/jpeg", 0.7);
+        document.querySelector(".btn-reg").innerText = "กำลังบันทึก...";
+        document.querySelector(".btn-reg").disabled = true;
 
-        let image = canvas.toDataURL("image/jpeg");
-        fetch("/register",{
+        fetch("/register", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
                 image: image,
-                name: document.getElementById("name").value,
-                id: document.getElementById("id").value
+                name: name,
+                id: id
             })
         })
+        .then(res => res.json())
+        .then(data => {
+            if(data.message) {
+                alert(data.message);
+                window.location.href = "/"; // เด้งกลับหน้าแรก
+            } else {
+                alert(data.error);
+                document.querySelector(".btn-reg").innerText = "บันทึกข้อมูลและใบหน้า";
+                document.querySelector(".btn-reg").disabled = false;
+            }
+        })
+        .catch(err => {
+            alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+            document.querySelector(".btn-reg").disabled = false;
+        });
     }
 </script>
-
 </body>
 </html>

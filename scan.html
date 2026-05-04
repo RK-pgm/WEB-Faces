@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>สแกนใบหน้าเข้าเรียน</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f0f2f5; }
+        video { border-radius: 10px; border: 4px solid #1a73e8; background: #000; }
+        #result { font-size: 24px; font-weight: bold; margin-top: 20px; color: #1a73e8; }
+        /* BUG FIX: เพิ่ม style สำหรับแสดง ID */
+        #student-id { font-size: 18px; color: #555; margin-top: 6px; }
+        .btn-back { margin-top: 20px; padding: 10px 20px; cursor: pointer; background: #5f6368; color: white; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h2>📸 วางใบหน้าให้ตรงกรอบเพื่อเช็คชื่อ</h2>
+    <video id="video" width="640" height="480" autoplay></video>
+    <br>
+    <button onclick="capture()" style="padding: 15px 30px; font-size: 18px; margin-top: 10px; cursor: pointer; background: #1a73e8; color: white; border: none; border-radius: 5px;">สแกนเลย</button>
+    <!-- BUG FIX: เพิ่ม element แสดงรหัสนักศึกษา -->
+    <p id="result"></p>
+    <p id="student-id"></p>
+    <button class="btn-back" onclick="window.location.href='/'">กลับหน้าหลัก</button>
+
+<script>
+const video = document.getElementById("video");
+let isProcessing = false;
+
+navigator.mediaDevices.getUserMedia({video: true})
+.then(stream => video.srcObject = stream)
+.catch(() => {
+    document.getElementById("result").innerText = "❌ เปิดกล้องไม่ได้";
+});
+function capture(){
+    if (isProcessing) return; 
+    if (!video.videoWidth) return;
+    isProcessing = true;
+
+    let canvas = document.createElement("canvas");
+    canvas.width = 640; // เพิ่มความละเอียดเพื่อความแม่นยำ
+    canvas.height = 480;
+
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    let image = canvas.toDataURL("image/jpeg", 0.8); // เพิ่มคุณภาพของภาพ
+    const resultElem = document.getElementById("result");
+    const idElem = document.getElementById("student-id");
+    resultElem.style.color = "#1a73e8";
+    resultElem.innerText = "⏳ กำลังประมวลผล...";
+    idElem.innerText = "";
+
+    fetch("/scan", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({image: image})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.name !== "Unknown") {
+            resultElem.style.color = "#34a853";
+            resultElem.innerText = `✅ เช็คชื่อสำเร็จ: ${data.name}`;
+            idElem.innerText = `🎓 รหัสนักศึกษา: ${data.id}`;
+        } else {
+            resultElem.style.color = "#ea4335";
+            resultElem.innerText = "❌ ไม่พบข้อมูลใบหน้า";
+            idElem.innerText = "";
+        }
+    })
+    .catch(() => {
+        resultElem.innerText = "⚠️ เกิดข้อผิดพลาด";
+    })
+    .finally(() => {
+        isProcessing = false;
+    });
+}
+</script>
+</body>
+</html>
